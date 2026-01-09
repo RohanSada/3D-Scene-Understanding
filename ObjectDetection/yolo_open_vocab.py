@@ -7,7 +7,7 @@ import argparse
 sys.path.append('../')
 
 class YoloWorldMac:
-    def __init__(self, model_path='yolov8s-world.pt', classes=None):
+    def __init__(self, model_path='./models/yolov8s-world.pt', classes=None):
         self.device = 'mps' if torch.backends.mps.is_available() else 'cpu'
         
         self.model = YOLO(model_path)
