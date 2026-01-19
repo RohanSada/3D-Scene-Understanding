@@ -1,7 +1,7 @@
 import cv2
 import os
-from runFastSam import FastSam
-from yolo_open_vocab import YoloWorldMac
+from .runFastSam import FastSam
+from .yolo_open_vocab import YoloWorldMac
 import numpy as np
 
 class FuseSamYolo():
