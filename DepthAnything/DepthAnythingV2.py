@@ -6,12 +6,13 @@ import numpy as np
 import cv2
 from transformers import pipeline
 from PIL import Image
+from transformers import AutoImageProcessor, AutoModelForDepthEstimation
 
 class DepthEstimator:
     """
     Depth estimation using Depth Anything v2
     """
-    def __init__(self, model_size='small', device=None):
+    def __init__(self, model_size='small', device=None, metric=True):
         """
         Initialize the depth estimator
         
@@ -19,6 +20,7 @@ class DepthEstimator:
             model_size (str): Model size ('small', 'base', 'large')
             device (str): Device to run inference on ('cuda', 'cpu', 'mps')
         """
+        self.metric=metric
         # Determine device
         if device is None:
             if torch.cuda.is_available():
@@ -48,7 +50,7 @@ class DepthEstimator:
             'base': 'depth-anything/Depth-Anything-V2-Base-hf',
             'large': 'depth-anything/Depth-Anything-V2-Large-hf'
         }
-        
+        self.load_metric_model(model_size)
         model_name = model_map.get(model_size.lower(), model_map['small'])
         
         # Create pipeline
@@ -63,7 +65,71 @@ class DepthEstimator:
             self.pipe = pipeline(task="depth-estimation", model=model_name, device=self.pipe_device)
             print(f"Loaded Depth Anything v2 {model_size} model on CPU (fallback)")
     
+    def load_metric_model(self, model_size, domain='indoor'):
+        checkpoints = {
+            'indoor': {
+                'small': "depth-anything/Depth-Anything-V2-Metric-Indoor-Small-hf",
+                'base':  "depth-anything/Depth-Anything-V2-Metric-Hypersim-Base",
+                'large': "depth-anything/Depth-Anything-V2-Metric-Hypersim-Large",
+            },
+            'outdoor': {
+                'small': "depth-anything/Depth-Anything-V2-Metric-VKITTI-Small",
+                'base':  "depth-anything/Depth-Anything-V2-Metric-VKITTI-Base",
+                'large': "depth-anything/Depth-Anything-V2-Metric-VKITTI-Large",
+            }
+        }
+        model_id = checkpoints[domain][model_size]
+        print(f"Loading {model_id} on {self.device}...")
+
+        self.processor = AutoImageProcessor.from_pretrained(model_id)
+        self.model = AutoModelForDepthEstimation.from_pretrained(model_id)
+        self.model.to(self.device)
+        self.model.eval()
+
+    def estimate_metric_depth(self, image_input):
+        # Input Handling (CPU Side)
+        if isinstance(image_input, str):
+            image = Image.open(image_input).convert("RGB")
+        elif isinstance(image_input, np.ndarray):
+            image = Image.fromarray(cv2.cvtColor(image_input, cv2.COLOR_BGR2RGB))
+        else:
+            raise ValueError("Input must be a path or numpy array.")
+
+        # Preprocessing
+        # We manually handle the move to device to control types strictly
+        inputs = self.processor(images=image, return_tensors="pt")
+        inputs = {k: v.to(self.device) for k, v in inputs.items()}
+
+        # If using FP16 on CUDA, ensure inputs are also FP16 if the model expects it
+        # (AutoImageProcessor usually outputs FP32, so we cast if needed)
+
+        # Inference
+        with torch.no_grad():
+            outputs = self.model(**inputs)
+            predicted_depth = outputs.predicted_depth
+
+        # Post-processing
+        # Interpolate back to original size
+        # 'bilinear' is faster than 'bicubic' and usually sufficient for depth maps
+        prediction = torch.nn.functional.interpolate(
+            predicted_depth.unsqueeze(1),
+            size=image.size[::-1], 
+            mode="bilinear", 
+            align_corners=False,
+        )
+
+        # Return Numpy array (Move to CPU)
+        return prediction.squeeze().float().cpu().numpy()
+
     def estimate_depth(self, image):
+        if self.metric==True:
+            depth_map = self.estimate_metric_depth(image)
+        else:
+            depth_map = self.estimate_normalized_depth(image)
+
+        return depth_map
+    
+    def estimate_normalized_depth(self, image):
         """
         Estimate depth from an image
         
@@ -182,3 +248,40 @@ class DepthEstimator:
             return float(np.min(region))
         else:
             return float(np.median(region)) 
+
+if __name__ == '__main__':
+    import sys
+    sys.path.append('../')
+    from ObjectDetection.yolo_open_vocab import * 
+
+    frame_path = '../Videos/Frames/frame_00320.jpg'
+
+    try: 
+        frame = cv2.imread(frame_path)
+    except:
+        print("Unable to load image from path")
+    
+    yolo_engine = YoloWorldMac()
+    depth_engine = DepthEstimator(metric=True)
+
+    depth_map = depth_engine.estimate_depth(frame)
+    
+    colourized_depth_map = depth_engine.colorize_depth(depth_map)
+
+    yolo_results = yolo_engine.get_outputs(frame)
+
+    yolo_boxes = yolo_results[0].boxes.xyxy.cpu().numpy()
+    yolo_cls = yolo_results[0].boxes.cls.cpu().numpy()
+    yolo_conf = yolo_results[0].boxes.conf.cpu().numpy()
+    label_names = yolo_results[0].names
+
+    for bbox, cls_id in zip(yolo_boxes, yolo_cls):
+        x1, y1, x2, y2 = map(int, bbox)
+        obj_depth = depth_engine.get_depth_in_region(depth_map, bbox)
+        cv2.rectangle(colourized_depth_map, (x1, y1), (x2, y2), (255, 255, 255), 2)
+        label_text = f"{label_names[int(cls_id)]} {obj_depth:.2f}m"
+        cv2.putText(colourized_depth_map, label_text, (x1, y1 - 10), 
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+        print(label_text)
+    cv2.imshow("col", colourized_depth_map)
+    cv2.waitKey(0)
