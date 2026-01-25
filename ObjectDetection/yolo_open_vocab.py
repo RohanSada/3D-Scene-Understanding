@@ -20,7 +20,7 @@ class YoloWorldMac:
     def set_classes(self, new_classes):
         self.model.set_classes(new_classes)
 
-    def get_outputs(self, frame, conf=0.25):
+    def get_outputs(self, frame, imgz=640, conf=0.5):
         # Inference with specific optimizations
         # verbose=False reduces I/O overhead
         # stream=True is more memory efficient for video
@@ -29,7 +29,7 @@ class YoloWorldMac:
             device=self.device, 
             conf=conf, 
             verbose=False,
-            imgsz=640
+            imgsz=imgz
         )
         return results
 
