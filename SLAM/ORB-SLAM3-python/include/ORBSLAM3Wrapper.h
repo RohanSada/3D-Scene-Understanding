@@ -18,6 +18,7 @@ public:
     bool processRGBD(cv::Mat image, cv::Mat depthImage, double timestamp);
     void reset();
     void shutdown();
+    cv::Mat GetPose();
     bool isRunning();
     void setUseViewer(bool useViewer);
     std::vector<Eigen::Matrix4f> getTrajectory() const;

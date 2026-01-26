@@ -102,6 +102,18 @@ bool ORBSLAM3Python::processRGBD(cv::Mat image, cv::Mat depthImage, double times
     }
 }
 
+cv::Mat ORBSLAM3Python::GetPose()
+{
+    // Check if system is initialized
+    if (system)
+    {
+        // Calls the underlying ORB_SLAM3 System's GetPose method
+        return system->GetPose();
+    }
+    // Return empty matrix if system not running
+    return cv::Mat();
+}
+
 void ORBSLAM3Python::shutdown()
 {
     if (system)
@@ -150,5 +162,6 @@ PYBIND11_MODULE(orbslam3, m)
         .def("is_running", &ORBSLAM3Python::isRunning)
         .def("reset", &ORBSLAM3Python::reset)
         .def("set_use_viewer", &ORBSLAM3Python::setUseViewer)
+        .def("get_pose", &ORBSLAM3Python::GetPose, "Returns the current camera pose matrix")
         .def("get_trajectory", &ORBSLAM3Python::getTrajectory);
 }

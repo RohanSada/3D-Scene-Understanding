@@ -1590,6 +1590,24 @@ string System::CalculateCheckSum(string filename, int type)
 
     return checksum;
 }
+// -----------------------------------------------------------------------------
+// REPLACE THE PREVIOUS GetPose() IN src/System.cc WITH THIS:
+// -----------------------------------------------------------------------------
+
+cv::Mat System::GetPose()
+{
+    if(mpTracker)
+    {
+        // 1. Get the Pose as a Sophus object (using the public GetPose method)
+        // 2. Convert it to an Eigen Matrix (.matrix())
+        // 3. Convert that to an OpenCV Mat using the Converter class
+        return Converter::toCvMat(mpTracker->mCurrentFrame.GetPose().matrix());
+    }
+    else
+    {
+        return cv::Mat();
+    }
+}
 
 } //namespace ORB_SLAM
 
