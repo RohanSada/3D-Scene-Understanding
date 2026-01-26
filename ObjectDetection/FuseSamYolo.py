@@ -10,18 +10,14 @@ import numpy as np
 import time
 import open3d as o3d
 import json
-import queue
 
 class ObjectDetector3D:
-    def __init__(self, input_queue, output_queue, calibration_file='./utils/camera_calibration.json', stride=4):
+    def __init__(self, calibration_file='./utils/camera_calibration.json', stride=4):
         """
         stride: Downsampling factor. 
                 stride=2 is high quality (slower). 
                 stride=4 is fast (good for real-time video).
         """
-        self.input_queue = input_queue
-        self.output_queue = output_queue
-
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         if torch.backends.mps.is_available(): self.device = "mps"
         
@@ -84,38 +80,6 @@ class ObjectDetector3D:
         
         self.initialized = True
 
-    def get_message(self):
-        while True:
-            try:
-                message = self.input_queue.get(timeout=0.1)
-                print("Message received by Object Detection Module: ", message)
-                return message['content']
-            except queue.Empty:
-                continue
-
-    def send_message(self, queue, message):
-        try:
-            queue.put(message)
-        except queue.Error:
-            print("Error sending message: ", message, " on queue:", queue)
-
-    def create_and_send_detections_message(self, detections, frame_timestamp):
-        message = {
-            'MsgType': 'Object_Detections',
-            'content':{
-                'detections': detections, 
-                'frame_timestamp': frame_timestamp
-            }
-        }
-        self.send_message(self.output_queue, message)
-
-    def run(self):
-        while True:
-            message = self.get_message()
-            frame, frame_timestamp = message['frame'], message['frame_timestamp']
-            detections = self.process_frame(frame)
-            self.create_and_send_detections_message(detections, frame_timestamp)
-
     def process_frame(self, frame):
         h, w = frame.shape[:2]
 
@@ -173,10 +137,10 @@ class ObjectDetector3D:
             
             spatial_objects.append({
                 "label": det.get('label', 'object'),
-                "center": center,   # [x, y, z] location in camera space
-                "dimensions": extent,
-                "bbox_o3d": obb,    # Open3D Geometry object
-                "pcd": pcd          # Open3D PointCloud object
+                "center": np.asarray(center),   # [x, y, z] location in camera space
+                "dimensions": np.asarray(extent),
+                "rotation": np.asarray(obb.R),
+                "box_color": np.asarray(obb.color)
             })
             
         return spatial_objects, frame_undistorted
