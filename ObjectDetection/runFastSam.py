@@ -1,6 +1,7 @@
 import cv2
 from ultralytics import FastSAM
 import torch
+import time
 
 class FastSam():
     def __init__(self, model_path='./models/FastSAM-s.pt', conf_threshold=0.4, iou_threshold=0.9):
@@ -14,7 +15,7 @@ class FastSam():
         self.conf_threshold=conf_threshold
         self.iou_threshold=iou_threshold
     
-    def run_sam(self, frame, imgsz=320, retina_masks=True):
+    def run_sam(self, frame, imgsz=1024, retina_masks=True):
         results = self.model(
             frame, 
             device=self.device, 
@@ -26,49 +27,26 @@ class FastSam():
         )
         return results
     
-    def visualise_sam_results(self, frame, results):
+    def visualise_sam_results(self, results):
         annotated_frame = results[0].cpu().plot()
         return annotated_frame
 
 
 
 if __name__=='__main__':
-    video_path = '../Videos/demo.mp4'
+    frame_path = '../Videos/Frames/frame_00320.jpg'
     model_path = './models/FastSAM-s.pt'
-    skip_frames = 10
-    frame_count = 0
-    fastsam = FastSam(model_path)
 
-    cap = cv2.VideoCapture(video_path)
-    if not cap.isOpened():
-        print('Video not found')
-        exit()
+    sam_engine = FastSam(model_path=model_path, conf_threshold=0.6, iou_threshold=0.9)
+
+    frame = cv2.imread(frame_path)
+    for i in range(10):
+        sam_results = sam_engine.run_sam(frame)
+    t0 = time.time()
+    sam_results = sam_engine.run_sam(frame)
+    print("SAM Inference Time: ", time.time()-t0)
+    annotated_sam_output = sam_engine.visualise_sam_results(sam_results)
+
+    cv2.imshow("SAM Output", annotated_sam_output)
+    cv2.waitKey(0)
     
-    last_annotated_frame = None
-
-    try:
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
-            
-            should_run = (frame_count % skip_frames == 0)
-            
-            if should_run == True:
-                results = fastsam.run_sam(frame)
-                annotated_frame = fastsam.visualise_sam_results(frame, results)
-                last_annotated_frame = annotated_frame
-            else:
-                annotated_frame = last_annotated_frame
-            
-            cv2.imshow("FastSAM Output", annotated_frame)
-            frame_count += 1
-            
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break         
-    except KeyboardInterrupt:
-        print("Stopping...")
-    finally:
-        cap.release()
-        cv2.destroyAllWindows()
-
