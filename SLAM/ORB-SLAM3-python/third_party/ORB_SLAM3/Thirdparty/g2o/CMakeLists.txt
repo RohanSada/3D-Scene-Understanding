@@ -3,6 +3,19 @@ SET(CMAKE_LEGACY_CYGWIN_WIN32 0)
 
 PROJECT(g2o)
 
+# --- START: CONDA CONFIGURATION ---
+# This forces g2o to find headers/libs (like Eigen) inside your active Conda env
+if(DEFINED ENV{CONDA_PREFIX})
+    message(STATUS "g2o: Found Conda Environment: $ENV{CONDA_PREFIX}")
+    set(CMAKE_PREFIX_PATH "$ENV{CONDA_PREFIX}")
+    include_directories("$ENV{CONDA_PREFIX}/include")
+    include_directories("$ENV{CONDA_PREFIX}/include/eigen3")
+    link_directories("$ENV{CONDA_PREFIX}/lib")
+else()
+    message(WARNING "g2o: CONDA_PREFIX is not set. Please activate your conda environment!")
+endif()
+# --- END: CONDA CONFIGURATION ---
+
 SET(g2o_C_FLAGS)
 SET(g2o_CXX_FLAGS)
 
@@ -56,8 +69,6 @@ ENDIF(OPENMP_FOUND AND G2O_USE_OPENMP)
 # Compiler specific options for gcc
 SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3 -march=native")
 SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3 -march=native")
-# SET(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O3")
-# SET(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
 
 # activate warnings !!!
 SET(g2o_C_FLAGS "${g2o_C_FLAGS} -Wall -W")
@@ -86,9 +97,8 @@ ${g2o_SOURCE_DIR}/core
 ${g2o_SOURCE_DIR}/types
 ${g2o_SOURCE_DIR}/stuff 
 ${G2O_EIGEN3_INCLUDE}
-"/opt/homebrew/include"
-"/opt/homebrew/include/eigen3"
 )
+# NOTE: Removed hardcoded "/opt/homebrew/include" from above block.
 
 # Include the subdirectories
 ADD_LIBRARY(g2o ${G2O_LIB_TYPE}
@@ -173,7 +183,7 @@ g2o/stuff/macros.h
 g2o/stuff/timeutil.cpp
 g2o/stuff/misc.h
 g2o/stuff/timeutil.h
-g2o/stuff/os_specific.c    
+g2o/stuff/os_specific.c     
 g2o/stuff/os_specific.h
 g2o/stuff/string_tools.cpp
 g2o/stuff/property.cpp       
