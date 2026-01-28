@@ -1,0 +1,34 @@
+# Python artifacts
+__pycache__/
+*.pyc
+
+# Virtual Environments
+env/
+venv/
+.venv/
+
+# Mac System files
+.DS_Store
+*.DS_Store
+
+# IDE settings (VS Code, JetBrains)
+.vscode/
+.idea/
+
+# Large files / Datasets
+Videos/
+models/
+colmap/
+
+SLAM/ORB-SLAM3-python/build
+SLAM/ORB-SLAM3-python/orbslam3.egg-info
+SLAM/ORB-SLAM3-python/third_party/ORB_SLAM3/Vocabulary/ORBvoc.txt
+
+*.dylib
+*.so
+
+*.mp4
+*.mkv
+
+Videos/
+models/
