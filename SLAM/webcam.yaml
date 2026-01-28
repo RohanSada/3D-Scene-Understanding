@@ -1,0 +1,52 @@
+%YAML:1.0
+
+#--------------------------------------------------------------------------------------------
+# Camera Parameters
+#--------------------------------------------------------------------------------------------
+File.version: "1.0"
+
+Camera.type: "PinHole"
+
+# Camera 1 calibration (OpenCV) 
+Camera1.fx: 3403.6972280243394
+Camera1.fy: 3397.2423491840636
+Camera1.cx: 1021.251132539793
+Camera1.cy: 1977.0945154840845
+
+Camera1.k1: 0.22887512627287823
+Camera1.k2: -1.8619227492645545
+Camera1.p1: 0.009340330437034316
+Camera1.p2: -0.005355732968975709
+
+Camera.width: 1080
+Camera.height: 1920
+
+# FPS MUST be an integer
+Camera.fps: 20
+
+# Color order (0: BGR, 1: RGB)
+Camera.RGB: 1
+
+#--------------------------------------------------------------------------------------------
+# ORB Parameters
+#--------------------------------------------------------------------------------------------
+ORBextractor.nFeatures: 1000
+ORBextractor.scaleFactor: 1.2
+ORBextractor.nLevels: 8
+# Thresholds must be integers
+ORBextractor.iniThFAST: 20
+ORBextractor.minThFAST: 7
+
+#--------------------------------------------------------------------------------------------
+# Viewer Parameters (ALL MUST BE FLOATS)
+#--------------------------------------------------------------------------------------------
+Viewer.KeyFrameSize: 0.05
+Viewer.KeyFrameLineWidth: 1.0     # Fixed: added .0
+Viewer.GraphLineWidth: 0.9
+Viewer.PointSize: 2.0             # Fixed: added .0
+Viewer.CameraSize: 0.08
+Viewer.CameraLineWidth: 3.0       # Fixed: added .0
+Viewer.ViewpointX: 0.0            # Fixed: added .0
+Viewer.ViewpointY: -0.7
+Viewer.ViewpointZ: -1.8
+Viewer.ViewpointF: 500.0          # Fixed: added .0
