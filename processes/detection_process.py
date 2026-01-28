@@ -10,7 +10,7 @@ def detection_process(det_queue, ctrl_queue, calib_path):
     while True:
         try:
             message = det_queue.get(timeout=0.01)
-            frame, frame_timestamp = message['content']['frame'], message['content']
+            frame, frame_timestamp = message['content']['frame'], message['content']['frame_timestamp']
         except:
             continue
 
@@ -18,7 +18,7 @@ def detection_process(det_queue, ctrl_queue, calib_path):
         ctrl_queue.put({
             "MsgType": "OBJECTS_3D",
             "content": {
-                'Objects': result,
+                'Objects': result[0],
                 'frame_timestamp': frame_timestamp
             }
         })

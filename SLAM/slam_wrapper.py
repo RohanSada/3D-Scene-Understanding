@@ -3,7 +3,7 @@ import orbslam3
 import time
 
 class ORB_SLAM3_Wrapper():
-    def __init__(self, vocab_path="./ORB-SLAM3-python/third_party/ORB_SLAM3/Vocabulary/ORBvoc.txt", settings_path="./ORB-SLAM3-python/third_party/ORB_SLAM3/Examples/Monocular/EuRoC.yaml"):
+    def __init__(self, vocab_path="./ORB-SLAM3-python/third_party/ORB_SLAM3/Vocabulary/ORBvoc.txt", settings_path="./webcam.yaml"):
         self.vocab_path = vocab_path
         self.settings_path = settings_path
         self.slam = orbslam3.system(vocab_path, settings_path, orbslam3.Sensor.MONOCULAR)
@@ -16,7 +16,6 @@ class ORB_SLAM3_Wrapper():
             self.start_time = time.time()   
         else:
             print("Start time already set before")
-        return
 
     def get_all_methods(self):
         methods = [method_name for method_name in dir(self.slam) 

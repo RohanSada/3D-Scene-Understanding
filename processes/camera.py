@@ -1,5 +1,7 @@
 import cv2
 import time
+import sys
+sys.path.append('../')
 
 def create_and_send_message(frame, frame_timestamp, queue):
     message = {
@@ -13,8 +15,10 @@ def create_and_send_message(frame, frame_timestamp, queue):
     return
 
 def camera_process(slam_queue, det_queue):
-    cap = cv2.VideoCapture(0)
+    video_path = './Videos/demo.mp4'
+    cap = cv2.VideoCapture(video_path)
     cv2.setNumThreads(1)
+    print("Starting Camera process...")
     while True:
         ret, frame = cap.read()
         if not ret:
